@@ -1,0 +1,80 @@
+Phase 1:
+1. This is a warm up phase and easy to defuse. From the hints in the lab's
+Writeup, first of all, get the assembler code and symbol table of the bomb;
+Using objdump -d > bomb.s and objdump -t > bomb.t respectively.
+
+2. From bomb.t, we can see that there are functions named phase_1, phase_2
+and so on, till phase_6. It's obvious that those functions are the ones we
+are interested in.
+
+3. By checking the 'main' function in bomb.s, we noticed that there are exactly
+6 calls to 'read_line' just before calling phase_[1-6]. Each of the functions
+phase_[1-6] take exactly one parameter, the pointer(start address) of the input
+string, let's call it 'input'.
+
+4. in 'phase_1', there is a call to function 'strings_not_equal' with the first
+argument is 'input', the second argument is constant memory address 0x80497c0.
+after the call, in line 390, it's testing the return value, 'explode_bomb' is
+called if non-zero. So, we just type the same string as stored at 0x80497c0
+
+
+Phase 2:
+1. in 'phase_2', there is a call to 'read_six_numbers', the first argument is
+'input', the second argument is the stack address -0x18(%ebp). inside the
+function, it just called sscanf to put numbers we entered into an array, which
+is a local variable in 'phase_2'. The format string stored at 0x8049b1b, which
+is '%d %d %d %d %d %d'. After the all, it tests if the first element is 1, will
+call 'explode_bomb' if not.
+Then, it's a loop, for i = 1 ~ 5, test a[i] - (i+1)*a[i-1], 'explode_bomb' if
+it's not zero. So, the six numbers we typed in should be: 1 2 6 24 120 720 
+
+
+Phase 3:
+1. in 'phase_3', the call to sscanf stores input to 3 local varibles, addresses
+are -0xc(%ebp), -0x5(%ebp), -0x4(%ebp), the format string stored at 0x80497de,
+which is '%d %c %d', so we know what we should input.
+
+2. According to the hints in README, we know this phase is about switch statement
+so we are sure that the goal is to find the jump table, this makes the problem
+a lot easier.
+
+3. the jump table is *0x80497e8, the first int we typed is the index to the entry
+the other two are used to test if 'explode_bomb' should be called. 
+
+
+Phase 4:
+1. this phase is about recursion. after examing the code of 'phase_4', there are
+recursive calls to 'func4', 'func4' is f(x) = f(x-1) + f(x-2), the return value
+is tests with 55. so we know we need to type 9.
+
+
+Phase 5:
+1. from line 578-582 in bomb.s, we know that we should input a string with
+length of 6.
+
+2. line 583 - 593, this a loop for moving 6 characters. The source start at
+0x804b220, (stored in %esi); The destination is a local stack area (-0x8(%ebp)),
+stored in %ecx.
+
+3. line 599, the destination string is compared with a string start at 0x804980b.
+By examing the memory there, we know it's "giants" (x /20s 0x804980b)
+
+4. After examing the memory address 0x804b220:
+(gdb) x /20s 0x804b220
+  0x804b220 <array.123>:   "isrveawhobpnutfg\260\001"
+there is a string which contains all the characters in 'giants'. It's obvious now
+this phase require us to input the index to get 'giants' from the string.
+
+5. The index are [15, 0, 5, 11, 13, 1], the tricky part comes from how to type in
+the index since the characters with direct ascii code mapping are not printable chars.
+By looking carefully at the code, we see the magic is the 'and $0xf, %al', so we can
+take use of the high order 4 bits to get printable chars.
+'OPUkma' is one of the many solutions
+
+
+Phase 6
+1. First, in phase_6, it checks if there are 6 ints inputed (and they must be 1-6 respectively, 0x8048db3 ~ 0x8048e00)
+2. Second, it checks a 6 elements linked list whose addresses are stored at -0x34(%ebp) (saw from 0x804be67), if it's not sorted in descending order, explode_bomb will be called 
+3. From this, we can guess all the previous operations before the check in the second step are about the sorting, and it depends on the correct input.
+4. Before sorting, the address of the first element is stored at -0x34(%ebp), its value is 0x804b26c. Following from there, the list is:
+0x804b26c -> 0x804b260 -> 0x804b254 -> 0x804b248 -> 0x804b23c -> 0x804b230

@@ -1,0 +1,10 @@
+In general see the functions : phase_1, phase_2 and so on.
+Seeing the assembly instructions find out the program flow and then find our the phrases.
+
+1. A string stored at an address. (Pretty Straight forward)
+2. six numbers (loop)
+3. Switch case (find out the correct combination from memory table)
+4. Fibonnacci series. (Recursion)
+5. It's jumbled string with redunancies which the code tries to match with "giants". Give the correct index numbers.
+The fun part is, index numbers are 15 0 5 11 13 1. But these are not printable characters. In the code %al and 0xf are ANDed. So we can just take characters whose last 4 bits correspond to the numbers above. So multiple solutions are possible.
+A few of them would be OPUKMA , OPekma, OPUKmA...
